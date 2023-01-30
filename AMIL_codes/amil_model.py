@@ -31,7 +31,7 @@ class Attention(nn.Module):
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(self.L*self.K, 1),
+            nn.Linear(self.L * self.K, 1),
             nn.Sigmoid()
         )
 

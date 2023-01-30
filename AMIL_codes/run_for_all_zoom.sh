@@ -1,5 +1,6 @@
 mkdir terminal_logs
-declare -a ZOOM=(40 100 200 400)
+#declare -a ZOOM=(40 100 200 400)
+declare -a ZOOM=(100)
 # declare -a epoch=(1 2 3 4 5 6 7 8 9 10)
 
 for i in "${ZOOM[@]}"

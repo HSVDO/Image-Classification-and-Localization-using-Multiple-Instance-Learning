@@ -1,7 +1,8 @@
 from __future__ import print_function
 
 import numpy as np
-from scipy.misc import imsave
+#from scipy.misc import imsave
+import imageio
 import argparse
 import torch
 import torch.utils.data as data_utils
@@ -30,8 +31,8 @@ from tensorboardX import SummaryWriter
 import argparse
 
 parser = argparse.ArgumentParser(description='Breakthis data_mynet')
-parser.add_argument("--zoom", help='zoom_level',default=400)
-parser.add_argument('--epochs',type=int, default=1, metavar='N',
+parser.add_argument("--zoom", help='zoom_level', default=400)
+parser.add_argument('--epochs', type=int, default=1, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
@@ -45,11 +46,10 @@ parser.add_argument('--reg', type=float, default=10e-5, metavar='R',
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
-zoom_level_x =str(args.zoom) + 'X'
-
+zoom_level_x = str(args.zoom) + 'X'
 
 print('zoom_level_{} epoch_{} learning_rate_{}'.format(zoom_level_x, args.epochs, args.lr))
-writer = SummaryWriter(zoom_level_x+'/runs/'+"epoch:"+str(args.epochs))
+writer = SummaryWriter(zoom_level_x + '/runs/' + "epoch_" + str(args.epochs))
 
 # Training settings
 # parser = argparse.ArgumentParser(description='PyTorch MNIST bags Example')
@@ -110,17 +110,16 @@ loader_kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 # /home/dipesh/test1/new_data_tree/40X
 # /home/dipesh/126/AMIL_project/AMIL_codes/amil_model.py
 # /home/dipesh/126/AMIL_project/
-data_path_train = "../AMIL_Data/{}/train".format(zoom_level_x)
-data_path_test = "../AMIL_Data/{}/test".format(zoom_level_x)
+data_path_train = "../AMIL_Data/0_SKCM_1_UVM/{}/train".format(zoom_level_x)
+data_path_test = "../AMIL_Data/0_SKCM_1_UVM/{}/test".format(zoom_level_x)
 
-data = PatchMethod(root = data_path_train)
-val_data =PatchMethod(root = data_path_test, mode = 'test')
+data = PatchMethod(root=data_path_train)
+val_data = PatchMethod(root=data_path_test, mode='test')
 # data = PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/')
 # val_data =PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/', mode = 'test')
 
-train_loader = torch.utils.data.DataLoader(data, shuffle = True, num_workers = 6, batch_size = 1)
-test_loader = torch.utils.data.DataLoader(val_data, shuffle = False, num_workers = 6, batch_size = 1)
-
+train_loader = torch.utils.data.DataLoader(data, shuffle=True, num_workers=6, batch_size=1)
+test_loader = torch.utils.data.DataLoader(val_data, shuffle=False, num_workers=6, batch_size=1)
 
 print('Init Model')
 model = Attention()
@@ -128,6 +127,8 @@ if args.cuda:
     model.cuda()
 
 optimizer = optim.Adam(model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=args.reg)
+
+
 # optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 
@@ -166,16 +167,20 @@ def train(epoch):
     # calculate loss and error for epoch
     train_loss /= len(train_loader)
     train_error /= len(train_loader)
-    train_acc = (1 - train_error)*100
+    train_acc = (1 - train_error) * 100
 
     writer.add_scalar('data/train_acc', train_acc, epoch)
     writer.add_scalar('data/train_error', train_error, epoch)
     writer.add_scalar('data/train_loss', train_loss, epoch)
 
-    result_train = 'Epoch: {}, Loss: {:.4f}, Train error: {:.4f}, Train accuracy: {:.2f}'.format(epoch, train_loss.cpu().numpy()[0], train_error, train_acc)
+    result_train = 'Epoch: {}, Loss: {:.4f}, Train error: {:.4f}, Train accuracy: {:.2f}'.format(epoch,
+                                                                                                 train_loss.cpu().numpy()[
+                                                                                                     0], train_error,
+                                                                                                 train_acc)
 
     print(result_train)
     return result_train
+
 
 def test(epoch):
     model.eval()
@@ -195,7 +200,7 @@ def test(epoch):
         error, predicted_label = model.calculate_classification_error(data, bag_label)
         test_error += error
 
-        visualization_attention(data[0],attention_weights[0],batch_idx,epoch)
+        visualization_attention(data[0], attention_weights[0], batch_idx, epoch)
         if batch_idx < 1:  # plot bag labels and instance labels for first 5 bags
             bag_level = (bag_label.cpu().data.numpy(), int(predicted_label.cpu().data.numpy()))
             # print(bag_level)
@@ -210,19 +215,23 @@ def test(epoch):
 
     test_error /= len(test_loader)
     test_loss /= len(test_loader)
-    test_acc = (1 - test_error)*100    
+    test_acc = (1 - test_error) * 100
 
     writer.add_scalar('data/test_acc', test_acc, epoch)
     writer.add_scalar('data/test_error', test_error, epoch)
     writer.add_scalar('data/test_loss', test_loss, epoch)
-    result_test = 'Epoch: {}, Loss: {:.4f}, test error: {:.4f}, test accuracy: {:.2f}'.format(epoch, test_loss.cpu().numpy()[0], test_error, test_acc)
+    result_test = 'Epoch: {}, Loss: {:.4f}, test error: {:.4f}, test accuracy: {:.2f}'.format(epoch,
+                                                                                              test_loss.cpu().numpy()[
+                                                                                                  0], test_error,
+                                                                                              test_acc)
     print(result_test)
     return result_test
     # print('Test Set, Loss: {:.4f}, Test error: {:.4f}'.format(test_loss.cpu().numpy()[0], test_error))
 
-def visualization_attention(data,attention_weights,batch_idx,epoch):
-    img_save_dir = './{}/AMIL_visualization/epoch_{}'.format(zoom_level_x,epoch)
-    img_save_name = img_save_dir + '/test_epoch_{}_no_{}.png'.format(epoch,batch_idx)
+
+def visualization_attention(data, attention_weights, batch_idx, epoch):
+    img_save_dir = './{}/AMIL_visualization/epoch_{}'.format(zoom_level_x, epoch)
+    img_save_name = img_save_dir + '/test_epoch_{}_no_{}.png'.format(epoch, batch_idx)
     if not os.path.exists(img_save_dir):
         os.makedirs(img_save_dir)
 
@@ -230,29 +239,33 @@ def visualization_attention(data,attention_weights,batch_idx,epoch):
     attention_weights = attention_weights.cpu().data.numpy()
     # print("data.shape",data.shape)
     # print("attention_weights",attention_weights.shape)
-    attention_weights = attention_weights/np.max(attention_weights)
-    complete_image=np.zeros((3,480,700))
+    attention_weights = attention_weights / np.max(attention_weights)
+    complete_image = np.zeros((3, 480, 700))
     for height_no in range(16):
         for width_no in range(25):
-            complete_image[:,height_no*28:height_no*28+28, width_no*28:width_no*28+28] = data[height_no*25+width_no,:,:,:] * attention_weights[height_no*25+width_no]
-    complete_image = complete_image.transpose((1,2,0))
-    imsave(img_save_name,complete_image)
+            complete_image[:, height_no * 28:height_no * 28 + 28, width_no * 28:width_no * 28 + 28] = data[
+                                                                                                      height_no * 25 + width_no,
+                                                                                                      :, :, :] * \
+                                                                                                      attention_weights[
+                                                                                                          height_no * 25 + width_no]
+    complete_image = complete_image.transpose((1, 2, 0))
+    #imsave(img_save_name, complete_image)
+    imageio.imwrite(img_save_name, complete_image)
     # weighted_images_list = data * attention_weights
-
 
 
 if __name__ == "__main__":
     # img_save_dir = './AMIL_visualization/zoom_{}/epoch_{}'.format(zoom_level_x,epoch)
-    main_dir = "./" + zoom_level_x +'/'
-    folders = ["pt_files","txt_file"]
+    main_dir = "./" + zoom_level_x + '/'
+    folders = ["pt_files", "txt_file"]
     for i in folders:
-        if not os.path.exists(main_dir + i ):
-            os.makedirs(main_dir + i )
+        if not os.path.exists(main_dir + i):
+            os.makedirs(main_dir + i)
 
-    save_string="AMIL_Breakthis_epochs: "+str(args.epochs)+"zoom:"+zoom_level_x
-    save_name_txt = main_dir+"txt_file/"+save_string+".txt"
+    save_string = "AMIL_Breakthis_epochs_ " + str(args.epochs) + "zoom_" + zoom_level_x
+    save_name_txt = main_dir + "txt_file/" + save_string + ".txt"
 
-    model_file = open(save_name_txt,"w") 
+    model_file = open(save_name_txt, "w")
     for epoch in range(1, args.epochs + 1):
         print('----------Start Training----------')
         train_result = train(epoch)
@@ -261,5 +274,5 @@ if __name__ == "__main__":
         model_file.write(test_result + '\n')
         model_file.write(train_result + '\n')
     model_file.close()
-    torch.save(model.state_dict(),main_dir+"pt_files/"+save_string+"AMIL_Breakthis_state_dict.pt")
-    torch.save(model ,main_dir+"pt_files/"+save_string+"AMIL_Breakthis_model.pt")
+    torch.save(model.state_dict(), main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt")
+    torch.save(model, main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt")
