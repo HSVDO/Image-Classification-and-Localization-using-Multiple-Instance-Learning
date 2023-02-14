@@ -112,14 +112,17 @@ loader_kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 # /home/dipesh/126/AMIL_project/
 data_path_train = "../AMIL_Data/0_SKCM_1_UVM/{}/train".format(zoom_level_x)
 data_path_test = "../AMIL_Data/0_SKCM_1_UVM/{}/test".format(zoom_level_x)
+data_path_validation = "../AMIL_Data/0_SKCM_1_UVM/{}/validation".format(zoom_level_x)
 
 data = PatchMethod(root=data_path_train)
-val_data = PatchMethod(root=data_path_test, mode='test')
+test_data = PatchMethod(root=data_path_test, mode='test')
+validation_data = PatchMethod(root=data_path_test, mode='validate')
 # data = PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/')
 # val_data =PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/', mode = 'test')
 
 train_loader = torch.utils.data.DataLoader(data, shuffle=True, num_workers=6, batch_size=1)
-test_loader = torch.utils.data.DataLoader(val_data, shuffle=False, num_workers=6, batch_size=1)
+test_loader = torch.utils.data.DataLoader(test_data, shuffle=False, num_workers=6, batch_size=1)
+validation_loader = torch.utils.data.DataLoader(validation_data, shuffle=False, num_workers=6, batch_size=1)
 
 print('Init Model')
 model = Attention()
@@ -227,6 +230,53 @@ def test(epoch):
     print(result_test)
     return result_test
     # print('Test Set, Loss: {:.4f}, Test error: {:.4f}'.format(test_loss.cpu().numpy()[0], test_error))
+    
+    
+def validate(epoch):
+    model.eval()
+    validation_loss = 0.
+    test_error = 0.
+    for batch_idx, (data, label) in enumerate(validation_loader):
+        # print(label)
+        # print((data[0].shape))
+
+        bag_label = label[0]
+        instance_labels = label[0]
+        if args.cuda:
+            data, bag_label = data.cuda(), bag_label.cuda()
+        data, bag_label = Variable(data), Variable(bag_label)
+        loss, attention_weights = model.calculate_objective(data, bag_label)
+        validation_loss += loss.data[0]
+        error, predicted_label = model.calculate_classification_error(data, bag_label)
+        validation_error += error
+
+        visualization_attention(data[0], attention_weights[0], batch_idx, epoch)
+        if batch_idx < 1:  # plot bag labels and instance labels for first 5 bags
+            bag_level = (bag_label.cpu().data.numpy(), int(predicted_label.cpu().data.numpy()))
+            # print(bag_level)
+            # print(instance_labels)
+            # visualization_attention(data[0],attention_weights[0],batch_idx,epoch)
+            # print("attention_weights.shape",attention_weights.shape)
+            # instance_level = list(zip(instance_labels.numpy().tolist(),
+            #                      np.round(attention_weights.cpu().data.numpy(), decimals=3).tolist()))
+
+            # print('\nTrue Bag Label, Predicted Bag Label: {}\n'
+            #       'True Instance Labels, Attention Weights: {}'.format(bag_level, instance_level))
+
+    validation_error /= len(validation_loader)
+    validation_loss /= len(validation_loader)
+    validation_acc = (1 - validation_error) * 100
+
+    writer.add_scalar('data/validation_acc', validation_acc, epoch)
+    writer.add_scalar('data/validation_error', validation_error, epoch)
+    writer.add_scalar('data/validation_loss', validation_loss, epoch)
+    result_validation = 'Epoch: {}, Loss: {:.4f}, validation error: {:.4f}, validation accuracy: {:.2f}'.format(epoch,
+                                                                                              validation_loss.cpu().numpy()[
+                                                                                                  0], validation_error,
+                                                                                              validation_acc)
+    print(result_validation)
+    return result_validation
+    # print('Test Set, Loss: {:.4f}, Test error: {:.4f}'.format(test_loss.cpu().numpy()[0], test_error))
 
 
 def visualization_attention(data, attention_weights, batch_idx, epoch):
@@ -271,6 +321,8 @@ if __name__ == "__main__":
         train_result = train(epoch)
         print('----------Start Testing----------')
         test_result = test(epoch)
+        print('----------Start Validation----------')
+        validation_result = test(epoch)
         model_file.write(test_result + '\n')
         model_file.write(train_result + '\n')
     model_file.close()

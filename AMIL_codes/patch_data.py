@@ -16,9 +16,8 @@ class PatchMethod(torch.utils.data.Dataset):
         # print(self.raw_samples)
         self.samples = []
         for raw_sample in self.raw_samples:
-            print(f"raw_sample before {raw_sample}")
             raw_sample = raw_sample.replace("\\", "/") # fix windows and linux file pattern
-            print(f"raw_sample after replace {raw_sample}")
+            #hier den Hintergrund rausfiltern -> otsu thresholding (nur kurz in Ausarbeitung erwähnen)
             self.samples.append((raw_sample, int(raw_sample.split('/')[-2])))
         # print(self.samples)
 
@@ -34,7 +33,7 @@ class PatchMethod(torch.utils.data.Dataset):
         # images = glob.glob(image_dir + '/*')
 
         t = transforms.Compose(
-            [transforms.CenterCrop((448, 700))])  # centercropping to 1200 to generate 9 400x400 patches
+            #[transforms.CenterCrop((448, 700))])  # centercropping to 1200 to generate 9 400x400 patches
 
         transformations = transforms.Compose([
             transforms.ToTensor()
