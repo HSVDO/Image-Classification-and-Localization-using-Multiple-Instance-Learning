@@ -29,6 +29,11 @@ from amil_model import Attention
 from patch_data import PatchMethod
 from tensorboardX import SummaryWriter
 import argparse
+import sys
+
+sys.path.append('../grad_cam/src/') # add grad_cam source to path
+
+from gradcam import GradCam
 
 parser = argparse.ArgumentParser(description='Breakthis data_mynet')
 parser.add_argument("--zoom", help='zoom_level', default=400)
@@ -235,7 +240,7 @@ def test(epoch):
 def validate(epoch):
     model.eval()
     validation_loss = 0.
-    test_error = 0.
+    validation_error = 0.
     for batch_idx, (data, label) in enumerate(validation_loader):
         # print(label)
         # print((data[0].shape))
@@ -302,10 +307,22 @@ def visualization_attention(data, attention_weights, batch_idx, epoch):
     #imsave(img_save_name, complete_image)
     imageio.imwrite(img_save_name, complete_image)
     # weighted_images_list = data * attention_weights
+    
 
-
-if __name__ == "__main__":
-    # img_save_dir = './AMIL_visualization/zoom_{}/epoch_{}'.format(zoom_level_x,epoch)
+def visualize_grad_cam(model_path, model_state_dict):
+    checkpoint = torch.load(model_state_dict, map_location="cpu")
+    pretrained_model = torch.load(model_path, map_location="cpu")
+    pretrained_model.load_state_dict(checkpoint)
+    #load image
+    img_path = "../AMIL_Data/0_SKCM_1_UVM/100X/test/1/TCGA-VD-A8KB-01Z-00-DX1.F581FF22-C343-4DFF-8328-8F17927C72AA_185_degrees.png"
+    img_save_name = img_path.replace(".png", "_gradCam.png")
+    original_image = Image.open(img_path).convert('RGB')
+    grad_cam = GradCam(pretrained_model, target_layer = pretrained_model)
+    grad_cam_image = grad_cam.generate_cam(original_image)
+    imageio.imwrite(img_save_name, grad_cam_image)
+    
+    
+def do_training():
     main_dir = "./" + zoom_level_x + '/'
     folders = ["pt_files", "txt_file"]
     for i in folders:
@@ -322,9 +339,31 @@ if __name__ == "__main__":
         print('----------Start Testing----------')
         test_result = test(epoch)
         print('----------Start Validation----------')
-        validation_result = test(epoch)
+        validation_result = validate(epoch)
         model_file.write(test_result + '\n')
         model_file.write(train_result + '\n')
+        model_file.write(validation_result + '\n')
     model_file.close()
-    torch.save(model.state_dict(), main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt")
-    torch.save(model, main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt")
+    save_state_dict = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt"
+    torch.save(model.state_dict(), save_state_dict)
+    save_model = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt"
+    torch.save(model, save_model)
+    
+
+if __name__ == "__main__":
+    # img_save_dir = './AMIL_visualization/zoom_{}/epoch_{}'.format(zoom_level_x,epoch)
+    main_dir = "./" + zoom_level_x + '/'
+    folders = ["pt_files", "txt_file"]
+    for i in folders:
+        if not os.path.exists(main_dir + i):
+            os.makedirs(main_dir + i)
+
+    save_string = "AMIL_Breakthis_epochs_ " + str(args.epochs) + "zoom_" + zoom_level_x
+    save_name_txt = main_dir + "txt_file/" + save_string + ".txt"
+    save_state_dict = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt"
+    save_model = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt"
+
+    #do_training()
+    visualize_grad_cam(save_model, save_state_dict)
+    
+    

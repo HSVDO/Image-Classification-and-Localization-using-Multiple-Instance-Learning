@@ -22,7 +22,7 @@ class InvertedRepresentation():
         """
             Converts matrix to vector then calculates the alpha norm
         """
-        alpha_norm = ((input_matrix.view(-1))**alpha).sum()
+        alpha_norm = ((input_matrix.view(-1)) ** alpha).sum()
         return alpha_norm
 
     def total_variation_norm(self, input_matrix, beta):
@@ -33,8 +33,8 @@ class InvertedRepresentation():
         to_check = input_matrix[:, :-1, :-1]  # Trimmed: right - bottom
         one_bottom = input_matrix[:, 1:, :-1]  # Trimmed: top - right
         one_right = input_matrix[:, :-1, 1:]  # Trimmed: top - right
-        total_variation = (((to_check - one_bottom)**2 +
-                            (to_check - one_right)**2)**(beta/2)).sum()
+        total_variation = (((to_check - one_bottom) ** 2 +
+                            (to_check - one_right) ** 2) ** (beta / 2)).sum()
         return total_variation
 
     def euclidian_loss(self, org_matrix, target_matrix):
@@ -105,19 +105,19 @@ class InvertedRepresentation():
                 print('Iteration:', str(i), 'Loss:', loss.data.numpy())
                 recreated_im = recreate_image(opt_img)
                 im_path = '../generated/Inv_Image_Layer_' + str(target_layer) + \
-                    '_Iteration_' + str(i) + '.jpg'
+                          '_Iteration_' + str(i) + '.jpg'
                 save_image(recreated_im, im_path)
 
             # Reduce learning rate every 40 iterations
             if i % 40 == 0:
                 for param_group in optimizer.param_groups:
-                    param_group['lr'] *= 1/10
+                    param_group['lr'] *= 1 / 10
 
 
 if __name__ == '__main__':
     # Get params
     target_example = 0  # Snake
-    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) =\
+    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) = \
         get_example_params(target_example)
 
     inverted_representation = InvertedRepresentation(pretrained_model)

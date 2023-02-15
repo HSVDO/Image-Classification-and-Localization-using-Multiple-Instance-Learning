@@ -17,6 +17,7 @@ from net import Net
 
 PROJECT_FILE_DIR = dirname(dirname(abspath(__file__)))
 
+
 def convert_to_grayscale(im_as_arr):
     """
         Converts 3d image to grayscale
@@ -67,18 +68,18 @@ def save_class_activation_images(org_img, activation_map, file_name):
     # Grayscale activation map
     heatmap, heatmap_on_image = apply_colormap_on_image(org_img, activation_map, 'hsv')
     # Save colored heatmap
-    path_to_file = os.path.join('../results', file_name+'_Cam_Heatmap.png')
+    path_to_file = os.path.join('../results', file_name + '_Cam_Heatmap.png')
     print(np.max(heatmap))
     save_image(heatmap, path_to_file)
     # Save heatmap on iamge
     print()
     print(np.max(heatmap_on_image))
-    path_to_file = os.path.join('../results', file_name+'_Cam_On_Image.png')
+    path_to_file = os.path.join('../results', file_name + '_Cam_On_Image.png')
     save_image(heatmap_on_image, path_to_file)
     # SAve grayscale heatmap
     print()
     print(np.max(activation_map))
-    path_to_file = os.path.join('../results', file_name+'_Cam_Grayscale.png')
+    path_to_file = os.path.join('../results', file_name + '_Cam_Grayscale.png')
     save_image(activation_map, path_to_file)
 
 
@@ -96,8 +97,8 @@ def apply_colormap_on_image(org_im, activation, colormap_name):
     # Change alpha channel in colormap to make sure original image is displayed
     heatmap = copy.copy(no_trans_heatmap)
     heatmap[:, :, 3] = 0.4
-    heatmap = Image.fromarray((heatmap*255).astype(np.uint8))
-    no_trans_heatmap = Image.fromarray((no_trans_heatmap*255).astype(np.uint8))
+    heatmap = Image.fromarray((heatmap * 255).astype(np.uint8))
+    no_trans_heatmap = Image.fromarray((no_trans_heatmap * 255).astype(np.uint8))
 
     # Apply heatmap on iamge
     heatmap_on_image = Image.new("RGBA", org_im.size)
@@ -178,7 +179,7 @@ def recreate_image(im_as_var):
         recreated_im (numpy arr): Recreated image in array
     """
     reverse_mean = [-0.485, -0.456, -0.406]
-    reverse_std = [1/0.229, 1/0.224, 1/0.225]
+    reverse_std = [1 / 0.229, 1 / 0.224, 1 / 0.225]
     recreated_im = copy.copy(im_as_var.data.numpy()[0])
     for c in range(3):
         recreated_im[c] /= reverse_std[c]
@@ -205,7 +206,7 @@ def get_positive_negative_saliency(gradient):
     return pos_saliency, neg_saliency
 
 
-def get_example_params(class_no,image_no,check_target_class):
+def get_example_params(class_no, image_no, check_target_class):
     """
         Gets used variables for almost all visualizations, like the image, model etc.
 
@@ -254,7 +255,7 @@ def get_example_params(class_no,image_no,check_target_class):
     img_path = custom_path
 
     target_class = check_target_class
-    file_name_to_export = img_path[img_path.rfind('/')+1:img_path.rfind('.')] 
+    file_name_to_export = img_path[img_path.rfind('/') + 1:img_path.rfind('.')]
 
     # Read image
     original_image = Image.open(img_path).convert('RGB')
@@ -270,8 +271,8 @@ def get_example_params(class_no,image_no,check_target_class):
     path_model = join(PROJECT_FILE_DIR, "vgg_models/model.pt")
     path_weights = join(PROJECT_FILE_DIR, "vgg_models/statedict.pt")
 
-    checkpoint = torch.load(path_weights,map_location="cpu")
-    pretrained_model = torch.load(path_model,map_location="cpu")
+    checkpoint = torch.load(path_weights, map_location="cpu")
+    pretrained_model = torch.load(path_model, map_location="cpu")
     # pretrained_model = Net()
     pretrained_model.load_state_dict(checkpoint)
 

@@ -16,9 +16,10 @@ class ClassSpecificImageGeneration():
     """
         Produces an image that maximizes a certain class with gradient ascent
     """
+
     def __init__(self, model, target_class):
         self.mean = [-0.485, -0.456, -0.406]
-        self.std = [1/0.229, 1/0.224, 1/0.225]
+        self.std = [1 / 0.229, 1 / 0.224, 1 / 0.225]
         self.model = model
         self.model.eval()
         self.target_class = target_class
@@ -50,7 +51,7 @@ class ClassSpecificImageGeneration():
             self.created_image = recreate_image(self.processed_image)
             if i % 10 == 0:
                 # Save image
-                im_path = '../generated/c_specific_iteration_'+str(i)+'.jpg'
+                im_path = '../generated/c_specific_iteration_' + str(i) + '.jpg'
                 save_image(self.created_image, im_path)
         return self.processed_image
 

@@ -12,6 +12,7 @@ class VanillaBackprop():
     """
         Produces gradients generated with vanilla back propagation from the image
     """
+
     def __init__(self, model):
         self.model = model
         self.gradients = None
@@ -47,7 +48,7 @@ class VanillaBackprop():
 if __name__ == '__main__':
     # Get params
     target_example = 1  # Snake
-    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) =\
+    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) = \
         get_example_params(target_example)
     # Vanilla backprop
     VBP = VanillaBackprop(pretrained_model)

@@ -12,6 +12,8 @@ from misc_functions import (get_example_params,
                             convert_to_grayscale,
                             save_gradient_images)
 from vanilla_backprop import VanillaBackprop
+
+
 # from guided_backprop import GuidedBackprop  # To use with guided backprop
 
 
@@ -33,7 +35,7 @@ def generate_smooth_grad(Backprop, prep_img, target_class, param_n, param_sigma_
     sigma = param_sigma_multiplier / (torch.max(prep_img) - torch.min(prep_img)).item()
     for x in range(param_n):
         # Generate noise
-        noise = Variable(prep_img.data.new(prep_img.size()).normal_(mean, sigma**2))
+        noise = Variable(prep_img.data.new(prep_img.size()).normal_(mean, sigma ** 2))
         # Add noise to the image
         noisy_img = prep_img + noise
         # Calculate gradients
@@ -48,7 +50,7 @@ def generate_smooth_grad(Backprop, prep_img, target_class, param_n, param_sigma_
 if __name__ == '__main__':
     # Get params
     target_example = 0  # Snake
-    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) =\
+    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) = \
         get_example_params(target_example)
 
     VBP = VanillaBackprop(pretrained_model)
