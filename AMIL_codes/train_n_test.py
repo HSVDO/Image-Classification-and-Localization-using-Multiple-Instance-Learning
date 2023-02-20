@@ -31,6 +31,8 @@ from tensorboardX import SummaryWriter
 import argparse
 import sys
 
+from datetime import datetime
+
 sys.path.append('../grad_cam/src/') # add grad_cam source to path
 
 from gradcam import GradCam
@@ -121,7 +123,7 @@ data_path_validation = "../AMIL_Data/0_SKCM_1_UVM/{}/validation".format(zoom_lev
 
 data = PatchMethod(root=data_path_train)
 test_data = PatchMethod(root=data_path_test, mode='test')
-validation_data = PatchMethod(root=data_path_test, mode='validate')
+validation_data = PatchMethod(root=data_path_validation, mode='validate')
 # data = PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/')
 # val_data =PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/', mode = 'test')
 
@@ -281,7 +283,7 @@ def validate(epoch):
                                                                                               validation_acc)
     print(result_validation)
     return result_validation
-    # print('Test Set, Loss: {:.4f}, Test error: {:.4f}'.format(test_loss.cpu().numpy()[0], test_error))
+    # print('Validation Set, Loss: {:.4f}, Validation error: {:.4f}'.format(validation_loss.cpu().numpy()[0], validation_error))
 
 
 def visualization_attention(data, attention_weights, batch_idx, epoch):
@@ -309,19 +311,6 @@ def visualization_attention(data, attention_weights, batch_idx, epoch):
     # weighted_images_list = data * attention_weights
     
 
-def visualize_grad_cam(model_path, model_state_dict):
-    checkpoint = torch.load(model_state_dict, map_location="cpu")
-    pretrained_model = torch.load(model_path, map_location="cpu")
-    pretrained_model.load_state_dict(checkpoint)
-    #load image
-    img_path = "../AMIL_Data/0_SKCM_1_UVM/100X/test/1/TCGA-VD-A8KB-01Z-00-DX1.F581FF22-C343-4DFF-8328-8F17927C72AA_185_degrees.png"
-    img_save_name = img_path.replace(".png", "_gradCam.png")
-    original_image = Image.open(img_path).convert('RGB')
-    grad_cam = GradCam(pretrained_model, target_layer = pretrained_model)
-    grad_cam_image = grad_cam.generate_cam(original_image)
-    imageio.imwrite(img_save_name, grad_cam_image)
-    
-    
 def do_training():
     main_dir = "./" + zoom_level_x + '/'
     folders = ["pt_files", "txt_file"]
@@ -336,34 +325,47 @@ def do_training():
     for epoch in range(1, args.epochs + 1):
         print('----------Start Training----------')
         train_result = train(epoch)
-        print('----------Start Testing----------')
-        test_result = test(epoch)
         print('----------Start Validation----------')
         validation_result = validate(epoch)
+        print('----------Start Testing----------')
+        test_result = test(epoch)
+        
         model_file.write(test_result + '\n')
-        model_file.write(train_result + '\n')
         model_file.write(validation_result + '\n')
+        model_file.write(train_result + '\n')
     model_file.close()
     save_state_dict = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt"
     torch.save(model.state_dict(), save_state_dict)
     save_model = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt"
     torch.save(model, save_model)
     
+    
+def force_testing():
+    save_string = "AMIL_Breakthis_epochs_ " + str(args.epochs) + "zoom_" + zoom_level_x
+    save_name_txt = main_dir + "txt_file/" + save_string + ".txt"
+    save_model = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt"
+    model = torch.load(save_model)
+    for epoch in range(1, args.epochs + 1):
+        print('----------Start Testing----------')
+        test_result = test(epoch)
+        print(test_result)
 
 if __name__ == "__main__":
     # img_save_dir = './AMIL_visualization/zoom_{}/epoch_{}'.format(zoom_level_x,epoch)
+    
     main_dir = "./" + zoom_level_x + '/'
     folders = ["pt_files", "txt_file"]
     for i in folders:
         if not os.path.exists(main_dir + i):
             os.makedirs(main_dir + i)
-
-    save_string = "AMIL_Breakthis_epochs_ " + str(args.epochs) + "zoom_" + zoom_level_x
-    save_name_txt = main_dir + "txt_file/" + save_string + ".txt"
-    save_state_dict = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt"
-    save_model = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt"
-
+          
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
     #do_training()
-    visualize_grad_cam(save_model, save_state_dict)
+    force_testing()
+    print("Training startet at time: ", current_time)
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    print("Training finished at time: ", current_time)
     
     
