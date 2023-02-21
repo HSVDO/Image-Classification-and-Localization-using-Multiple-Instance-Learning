@@ -210,7 +210,7 @@ def test(epoch):
         error, predicted_label = model.calculate_classification_error(data, bag_label)
         test_error += error
 
-        visualization_attention(data[0], attention_weights[0], batch_idx, epoch)
+        visualization_attention(data[0], attention_weights[0], batch_idx, epoch, "test")
         if batch_idx < 1:  # plot bag labels and instance labels for first 5 bags
             bag_level = (bag_label.cpu().data.numpy(), int(predicted_label.cpu().data.numpy()))
             # print(bag_level)
@@ -257,7 +257,7 @@ def validate(epoch):
         error, predicted_label = model.calculate_classification_error(data, bag_label)
         validation_error += error
 
-        visualization_attention(data[0], attention_weights[0], batch_idx, epoch)
+        visualization_attention(data[0], attention_weights[0], batch_idx, epoch, "validation")
         if batch_idx < 1:  # plot bag labels and instance labels for first 5 bags
             bag_level = (bag_label.cpu().data.numpy(), int(predicted_label.cpu().data.numpy()))
             # print(bag_level)
@@ -286,9 +286,9 @@ def validate(epoch):
     # print('Validation Set, Loss: {:.4f}, Validation error: {:.4f}'.format(validation_loss.cpu().numpy()[0], validation_error))
 
 
-def visualization_attention(data, attention_weights, batch_idx, epoch):
+def visualization_attention(data, attention_weights, batch_idx, epoch, visualize_mode):
     img_save_dir = './{}/AMIL_visualization/epoch_{}'.format(zoom_level_x, epoch)
-    img_save_name = img_save_dir + '/test_epoch_{}_no_{}.png'.format(epoch, batch_idx)
+    img_save_name = img_save_dir + '/{}_epoch_{}_no_{}.png'.format(visualize_mode, epoch, batch_idx)
     if not os.path.exists(img_save_dir):
         os.makedirs(img_save_dir)
 
@@ -296,7 +296,11 @@ def visualization_attention(data, attention_weights, batch_idx, epoch):
     attention_weights = attention_weights.cpu().data.numpy()
     # print("data.shape",data.shape)
     # print("attention_weights",attention_weights.shape)
-    attention_weights = attention_weights / np.max(attention_weights)
+    
+    if epoch > 0:
+        attention_weights = attention_weights / np.max(attention_weights)
+    else:
+        pass
     complete_image = np.zeros((3, 480, 700))
     for height_no in range(16):
         for width_no in range(25):
@@ -322,12 +326,12 @@ def do_training():
     save_name_txt = main_dir + "txt_file/" + save_string + ".txt"
 
     model_file = open(save_name_txt, "w")
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(0, args.epochs + 1):
         print('----------Start Training----------')
         train_result = train(epoch)
-        print('----------Start Validation----------')
+        print('----------Start Validation--------')
         validation_result = validate(epoch)
-        print('----------Start Testing----------')
+        print('----------Start Testing-----------')
         test_result = test(epoch)
         
         model_file.write(test_result + '\n')
@@ -361,8 +365,8 @@ if __name__ == "__main__":
           
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
-    #do_training()
-    force_testing()
+    do_training()
+    #force_testing()
     print("Training startet at time: ", current_time)
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
