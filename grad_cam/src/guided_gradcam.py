@@ -11,6 +11,7 @@ from gradcam import GradCam
 from guided_backprop import GuidedBackprop
 from net import Net
 
+
 def guided_grad_cam(grad_cam_mask, guided_backprop_mask):
     """
         Guided grad cam is just pointwise multiplication of cam mask and
@@ -26,15 +27,15 @@ def guided_grad_cam(grad_cam_mask, guided_backprop_mask):
 
 if __name__ == '__main__':
     # Get params
-    class_no=6                  #denseresidential
-    image_no=84
-    check_target_class=1
+    class_no = 6  # denseresidential
+    image_no = 84
+    check_target_class = 1
 
-    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) =\
-        get_example_params(class_no,image_no,check_target_class)
+    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) = \
+        get_example_params(class_no, image_no, check_target_class)
 
     # Grad cam
-    target_layer=35
+    target_layer = 35
     gcv2 = GradCam(pretrained_model, target_layer=target_layer)
     # Generate cam mask
     cam = gcv2.generate_cam(prep_img, target_class)
@@ -48,8 +49,9 @@ if __name__ == '__main__':
 
     # Guided Grad cam
     cam_gb = guided_grad_cam(cam, guided_grads)
-    save_gradient_images(cam_gb, file_name_to_export +",layer="+str(target_layer) +'_Guided_Grad_Cam')
+    save_gradient_images(cam_gb, file_name_to_export + ",layer=" + str(target_layer) + '_Guided_Grad_Cam')
     grayscale_cam_gb = convert_to_grayscale(cam_gb)
-    save_gradient_images(grayscale_cam_gb, file_name_to_export +",layer="+str(target_layer)+ '_Guided_Grad_Cam_gray')
-    save_gradient_images(guided_grads, file_name_to_export+",layer="+str(target_layer)+'_guided_grads   ')
+    save_gradient_images(grayscale_cam_gb,
+                         file_name_to_export + ",layer=" + str(target_layer) + '_Guided_Grad_Cam_gray')
+    save_gradient_images(guided_grads, file_name_to_export + ",layer=" + str(target_layer) + '_guided_grads   ')
     print('Guided grad cam completed')

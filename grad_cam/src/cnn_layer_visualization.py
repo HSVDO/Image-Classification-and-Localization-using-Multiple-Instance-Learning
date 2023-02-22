@@ -18,6 +18,7 @@ class CNNLayerVisualization():
         Produces an image that minimizes the loss of a convolution
         operation for a specific layer and filter
     """
+
     def __init__(self, model, selected_layer, selected_filter):
         self.model = model
         self.model.eval()
@@ -32,6 +33,7 @@ class CNNLayerVisualization():
         def hook_function(module, grad_in, grad_out):
             # Gets the conv output of the selected filter (from selected layer)
             self.conv_output = grad_out[0, self.selected_filter]
+
         # Hook the selected layer
         self.model[self.selected_layer].register_forward_hook(hook_function)
 
@@ -70,7 +72,7 @@ class CNNLayerVisualization():
             # Save image
             if i % 5 == 0:
                 im_path = '../generated/layer_vis_l' + str(self.selected_layer) + \
-                    '_f' + str(self.selected_filter) + '_iter' + str(i) + '.jpg'
+                          '_f' + str(self.selected_filter) + '_iter' + str(i) + '.jpg'
                 save_image(self.created_image, im_path)
 
     def visualise_layer_without_hooks(self):
@@ -111,7 +113,7 @@ class CNNLayerVisualization():
             # Save image
             if i % 5 == 0:
                 im_path = '../generated/layer_vis_l' + str(self.selected_layer) + \
-                    '_f' + str(self.selected_filter) + '_iter' + str(i) + '.jpg'
+                          '_f' + str(self.selected_filter) + '_iter' + str(i) + '.jpg'
                 save_image(self.created_image, im_path)
 
 

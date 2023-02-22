@@ -14,7 +14,6 @@ class CamExtractor():
     """
         Extracts cam features from the model
     """
-
     def __init__(self, model, target_layer):
         self.model = model
         self.target_layer = target_layer
@@ -30,11 +29,11 @@ class CamExtractor():
         conv_output = None
         print(self.model)
         for module_pos, module in self.model.features._modules.items():
-            print("@@@@ x @@@", x.shape)
-            print("module_pos", module)
+            print("@@@@ x @@@",x.shape)
+            print("module_pos",module)
             # print()
             x = module(x)  # Forward
-            print("X_module", x.shape)
+            print("X_module",x.shape)
             if int(module_pos) == self.target_layer:
                 x.register_hook(self.save_gradient)
                 conv_output = x  # Save the convolution output on that layer
@@ -48,7 +47,7 @@ class CamExtractor():
         conv_output, x = self.forward_pass_on_convolutions(x)
         x = x.view(x.size(0), -1)  # Flatten
         # Forward pass on the classifier
-        print("X_in_forward_pass_before_classifier", x.shape)
+        print("X_in_forward_pass_before_classifier",x.shape)        
         x = self.model.classifier(x)
         return conv_output, x
 
@@ -57,7 +56,6 @@ class GradCam():
     """
         Produces class activation map
     """
-
     def __init__(self, model, target_layer):
         self.model = model
         self.model.eval()
@@ -69,8 +67,8 @@ class GradCam():
         # conv_output is the output of convolutions at specified layer
         # model_output is the final output of the model (1, 1000)
         conv_output, model_output = self.extractor.forward_pass(input_image)
-        print("conv_output", conv_output.shape)
-        print("model_output", model_output.shape)
+        print("conv_output",conv_output.shape)
+        print("model_output",model_output.shape)        
         if target_class is None:
             target_class = np.argmax(model_output.data.numpy())
         # Target for backprop
@@ -95,9 +93,9 @@ class GradCam():
         cam = np.maximum(cam, 0)
         cam = (cam - np.min(cam)) / (np.max(cam) - np.min(cam))  # Normalize between 0-1
         cam = np.uint8(cam * 255)
-        print("cam_shape", cam.shape)  # Scale between 0-255 to visualize
+        print("cam_shape",cam.shape)  # Scale between 0-255 to visualize
         cam = np.uint8(Image.fromarray(cam).resize((input_image.shape[2],
-                                                    input_image.shape[3]), Image.ANTIALIAS))
+                       input_image.shape[3]), Image.ANTIALIAS))
         # ^ I am extremely unhappy with this line. Originally resizing was done in cv2 which
         # supports resizing numpy matrices, however, when I moved the repository to PIL, this
         # option is out of the window. So, in order to use resizing with ANTIALIAS feature of PIL,
@@ -108,12 +106,12 @@ class GradCam():
 
 if __name__ == '__main__':
     # Get params
-    class_no = 1
-    image_no = 84
-    check_target_class = 1
+    class_no=1
+    image_no=84
+    check_target_class=1
 
-    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) = \
-        get_example_params(class_no, image_no, check_target_class)
+    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) =\
+        get_example_params(class_no,image_no,check_target_class)
     # Grad cam
     grad_cam = GradCam(pretrained_model, target_layer='35')
     # Generate cam mask

@@ -18,6 +18,7 @@ class DeepDream():
         Produces an image that minimizes the loss of a convolution
         operation for a specific layer and filter
     """
+
     def __init__(self, model, selected_layer, selected_filter, im_path):
         self.model = model
         self.model.eval()
@@ -45,7 +46,7 @@ class DeepDream():
         self.processed_image = preprocess_image(self.created_image, True)
         # Define optimizer for the image
         # Earlier layers need higher learning rates to visualize whereas layer layers need less
-        optimizer = SGD([self.processed_image], lr=12,  weight_decay=1e-4)
+        optimizer = SGD([self.processed_image], lr=12, weight_decay=1e-4)
         for i in range(1, 251):
             optimizer.zero_grad()
             # Assign create image to a variable to move forward in the model
@@ -70,7 +71,7 @@ class DeepDream():
             if i % 10 == 0:
                 print(self.created_image.shape)
                 im_path = '../generated/ddream_l' + str(self.selected_layer) + \
-                    '_f' + str(self.selected_filter) + '_iter' + str(i) + '.jpg'
+                          '_f' + str(self.selected_filter) + '_iter' + str(i) + '.jpg'
                 save_image(self.created_image, im_path)
 
 

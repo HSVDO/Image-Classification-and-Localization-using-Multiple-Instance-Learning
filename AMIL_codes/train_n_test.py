@@ -29,6 +29,9 @@ from amil_model import Attention
 from patch_data import PatchMethod
 from tensorboardX import SummaryWriter
 import argparse
+import sys
+
+from datetime import datetime
 
 parser = argparse.ArgumentParser(description='Breakthis data_mynet')
 parser.add_argument("--zoom", help='zoom_level', default=400)
@@ -116,7 +119,7 @@ data_path_validation = "../AMIL_Data/0_SKCM_1_UVM/{}/validation".format(zoom_lev
 
 data = PatchMethod(root=data_path_train)
 test_data = PatchMethod(root=data_path_test, mode='test')
-validation_data = PatchMethod(root=data_path_test, mode='validate')
+validation_data = PatchMethod(root=data_path_validation, mode='validate')
 # data = PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/')
 # val_data =PatchMethod(root = '/Users/abhijeetpatil/Desktop/screenshots2/', mode = 'test')
 
@@ -203,7 +206,7 @@ def test(epoch):
         error, predicted_label = model.calculate_classification_error(data, bag_label)
         test_error += error
 
-        visualization_attention(data[0], attention_weights[0], batch_idx, epoch)
+        visualization_attention(data[0], attention_weights[0], batch_idx, epoch, "test")
         if batch_idx < 1:  # plot bag labels and instance labels for first 5 bags
             bag_level = (bag_label.cpu().data.numpy(), int(predicted_label.cpu().data.numpy()))
             # print(bag_level)
@@ -223,7 +226,7 @@ def test(epoch):
     writer.add_scalar('data/test_acc', test_acc, epoch)
     writer.add_scalar('data/test_error', test_error, epoch)
     writer.add_scalar('data/test_loss', test_loss, epoch)
-    result_test = 'Epoch: {}, Loss: {:.4f}, test error: {:.4f}, test accuracy: {:.2f}'.format(epoch,
+    result_test = 'Epoch: {}, Loss: {:.4f}, Test error: {:.4f}, Test accuracy: {:.2f}'.format(epoch,
                                                                                               test_loss.cpu().numpy()[
                                                                                                   0], test_error,
                                                                                               test_acc)
@@ -235,7 +238,7 @@ def test(epoch):
 def validate(epoch):
     model.eval()
     validation_loss = 0.
-    test_error = 0.
+    validation_error = 0.
     for batch_idx, (data, label) in enumerate(validation_loader):
         # print(label)
         # print((data[0].shape))
@@ -250,7 +253,7 @@ def validate(epoch):
         error, predicted_label = model.calculate_classification_error(data, bag_label)
         validation_error += error
 
-        visualization_attention(data[0], attention_weights[0], batch_idx, epoch)
+        visualization_attention(data[0], attention_weights[0], batch_idx, epoch, "validation")
         if batch_idx < 1:  # plot bag labels and instance labels for first 5 bags
             bag_level = (bag_label.cpu().data.numpy(), int(predicted_label.cpu().data.numpy()))
             # print(bag_level)
@@ -270,18 +273,18 @@ def validate(epoch):
     writer.add_scalar('data/validation_acc', validation_acc, epoch)
     writer.add_scalar('data/validation_error', validation_error, epoch)
     writer.add_scalar('data/validation_loss', validation_loss, epoch)
-    result_validation = 'Epoch: {}, Loss: {:.4f}, validation error: {:.4f}, validation accuracy: {:.2f}'.format(epoch,
+    result_validation = 'Epoch: {}, Loss: {:.4f}, Valid error: {:.4f}, Valid accuracy: {:.2f}'.format(epoch,
                                                                                               validation_loss.cpu().numpy()[
                                                                                                   0], validation_error,
                                                                                               validation_acc)
     print(result_validation)
     return result_validation
-    # print('Test Set, Loss: {:.4f}, Test error: {:.4f}'.format(test_loss.cpu().numpy()[0], test_error))
+    # print('Validation Set, Loss: {:.4f}, Validation error: {:.4f}'.format(validation_loss.cpu().numpy()[0], validation_error))
 
 
-def visualization_attention(data, attention_weights, batch_idx, epoch):
+def visualization_attention(data, attention_weights, batch_idx, epoch, visualize_mode):
     img_save_dir = './{}/AMIL_visualization/epoch_{}'.format(zoom_level_x, epoch)
-    img_save_name = img_save_dir + '/test_epoch_{}_no_{}.png'.format(epoch, batch_idx)
+    img_save_name = img_save_dir + '/{}_epoch_{}_no_{}.png'.format(visualize_mode, epoch, batch_idx)
     if not os.path.exists(img_save_dir):
         os.makedirs(img_save_dir)
 
@@ -289,42 +292,81 @@ def visualization_attention(data, attention_weights, batch_idx, epoch):
     attention_weights = attention_weights.cpu().data.numpy()
     # print("data.shape",data.shape)
     # print("attention_weights",attention_weights.shape)
-    attention_weights = attention_weights / np.max(attention_weights)
     complete_image = np.zeros((3, 480, 700))
-    for height_no in range(16):
-        for width_no in range(25):
-            complete_image[:, height_no * 28:height_no * 28 + 28, width_no * 28:width_no * 28 + 28] = data[
-                                                                                                      height_no * 25 + width_no,
-                                                                                                      :, :, :] * \
-                                                                                                      attention_weights[
-                                                                                                          height_no * 25 + width_no]
+    if epoch > 0:
+        attention_weights = attention_weights / np.max(attention_weights)
+        complete_image = np.zeros((3, 480, 700))
+        for height_no in range(16):
+            for width_no in range(25):
+                complete_image[:, height_no * 28:height_no * 28 + 28, width_no * 28:width_no * 28 + 28] = data[
+                                                                                                          height_no * 25 + width_no,
+                                                                                                          :, :, :] * \
+                                                                                                          attention_weights[
+                                                                                                              height_no * 25 + width_no]
+    else:
+        for height_no in range(16):
+            for width_no in range(25):
+                complete_image[:, height_no * 28:height_no * 28 + 28, width_no * 28:width_no * 28 + 28] = data[height_no * 25 + width_no,:, :, :]
+    
     complete_image = complete_image.transpose((1, 2, 0))
     #imsave(img_save_name, complete_image)
     imageio.imwrite(img_save_name, complete_image)
     # weighted_images_list = data * attention_weights
+    
 
-
-if __name__ == "__main__":
-    # img_save_dir = './AMIL_visualization/zoom_{}/epoch_{}'.format(zoom_level_x,epoch)
+def do_training():
     main_dir = "./" + zoom_level_x + '/'
-    folders = ["pt_files", "txt_file"]
-    for i in folders:
-        if not os.path.exists(main_dir + i):
-            os.makedirs(main_dir + i)
 
     save_string = "AMIL_Breakthis_epochs_ " + str(args.epochs) + "zoom_" + zoom_level_x
     save_name_txt = main_dir + "txt_file/" + save_string + ".txt"
 
     model_file = open(save_name_txt, "w")
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(0, args.epochs + 1):
         print('----------Start Training----------')
         train_result = train(epoch)
-        print('----------Start Testing----------')
-        test_result = test(epoch)
-        print('----------Start Validation----------')
-        validation_result = test(epoch)
-        model_file.write(test_result + '\n')
+        print('----------Start Validation--------')
+        validation_result = validate(epoch)
+        
         model_file.write(train_result + '\n')
+        model_file.write(validation_result + '\n')
+    
     model_file.close()
-    torch.save(model.state_dict(), main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt")
-    torch.save(model, main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt")
+    save_state_dict = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_state_dict.pt"
+    torch.save(model.state_dict(), save_state_dict)
+    save_model = main_dir + "pt_files/" + save_string + "AMIL_Breakthis_model.pt"
+    torch.save(model, save_model)
+    
+    
+def do_testing():
+    main_dir = "./" + zoom_level_x + '/'
+    save_string = "AMIL_Breakthis_epochs_ " + str(args.epochs) + "zoom_" + zoom_level_x
+    save_name_txt = main_dir + "txt_file/" + save_string + ".txt"
+    model_file = open(save_name_txt, "w")
+    for epoch in range(1, args.epochs + 1):
+        print('----------Start Testing-----------')
+        test_result = test(epoch)
+        model_file.write(test_result + '\n')
+        
+    model_file.close()
+    
+
+if __name__ == "__main__":
+    # img_save_dir = './AMIL_visualization/zoom_{}/epoch_{}'.format(zoom_level_x,epoch)
+    
+    main_dir = "./" + zoom_level_x + '/'
+    folders = ["pt_files", "txt_file"]
+    for i in folders:
+        if not os.path.exists(main_dir + i):
+            os.makedirs(main_dir + i)
+          
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    
+    do_training()
+    do_testing()
+    print("Training startet at time: ", current_time)
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    print("Training finished at time: ", current_time)
+    
+    

@@ -16,6 +16,7 @@ class GuidedBackprop():
     """
        Produces gradients generated with guided back propagation from the given image
     """
+
     def __init__(self, model):
         self.model = model
         self.gradients = None
@@ -28,6 +29,7 @@ class GuidedBackprop():
     def hook_layers(self):
         def hook_function(module, grad_in, grad_out):
             self.gradients = grad_in[0]
+
         # Register hook to the first layer
         first_layer = list(self.model.features._modules.items())[0][1]
         first_layer.register_backward_hook(hook_function)
@@ -38,6 +40,7 @@ class GuidedBackprop():
                 1- stores output in forward pass
                 2- imputes zero for gradient values that are less than zero
         """
+
         def relu_backward_hook_function(module, grad_in, grad_out):
             """
             If there is a negative gradient, change it to zero
@@ -78,12 +81,12 @@ class GuidedBackprop():
 
 
 if __name__ == '__main__':
-    class_no=1
-    image_no=84
-    check_target_class=1
+    class_no = 1
+    image_no = 84
+    check_target_class = 1
 
-    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) =\
-        get_example_params(class_no,image_no,check_target_class)
+    (original_image, prep_img, target_class, file_name_to_export, pretrained_model) = \
+        get_example_params(class_no, image_no, check_target_class)
 
     # Guided backprop
     GBP = GuidedBackprop(pretrained_model)

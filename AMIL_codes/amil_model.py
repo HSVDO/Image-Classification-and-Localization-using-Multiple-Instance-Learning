@@ -34,6 +34,10 @@ class Attention(nn.Module):
             nn.Linear(self.L * self.K, 1),
             nn.Sigmoid()
         )
+        
+        self.features = nn.Sequential(*list(self.classifier.children()))
+        
+        
 
     def forward(self, x):
         # print('========================')
